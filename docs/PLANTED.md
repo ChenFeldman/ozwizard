@@ -7,6 +7,8 @@ the code. Each entry gives the exact location, why it's wrong, and how to trigge
 > ⚠️ This repository intentionally contains insecure code and a fake credential.
 > Do not deploy it. The "secret" in `config.ts` is a made-up placeholder, not a
 > real key.
+>
+> For the security & usage posture (why these are safe here), see [USING_SAFELY.md](./USING_SAFELY.md).
 
 ---
 

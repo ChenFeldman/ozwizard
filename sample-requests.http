@@ -1,0 +1,42 @@
+### OzWizard sample requests
+### Open in VS Code (REST Client) or JetBrains HTTP client and click "Send Request".
+### Run `npm run dev` first. Update @artifactId / @scanId from earlier responses.
+
+@host = http://localhost:3000
+
+### 1. Health
+GET {{host}}/health
+
+### 2. Inspect the active policy (thresholds, denylist)
+GET {{host}}/policies
+
+### 3. Submit an artifact (copy the "id" from the response into @artifactId below)
+POST {{host}}/artifacts
+Content-Type: application/json
+
+{
+  "name": "payments-svc",
+  "version": "2.3.0",
+  "dependencies": [{ "name": "log4jira", "version": "2.10.0" }]
+}
+
+### 4. Scan the artifact -> verdict + findings (copy scan "id" into @scanId)
+@artifactId = PASTE_ARTIFACT_ID_HERE
+POST {{host}}/scans
+Content-Type: application/json
+
+{ "artifactId": "{{artifactId}}" }
+
+### 5. Fetch a stored scan
+@scanId = PASTE_SCAN_ID_HERE
+GET {{host}}/scans/{{scanId}}
+
+### 6. Escalate (record an override; effectiveVerdict -> allow, original kept)
+POST {{host}}/escalations
+Content-Type: application/json
+
+{
+  "scanId": "{{scanId}}",
+  "reason": "patched fork in use",
+  "requestedBy": "you"
+}

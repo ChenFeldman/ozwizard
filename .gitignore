@@ -5,3 +5,18 @@ data
 *.log
 .env
 .DS_Store
+web/dist
+playwright-report
+test-results
+
+# Generated participant copy (see scripts/participant-build.sh)
+participant-build
+
+# --- Participant build only -----------------------------------------------
+# This is the FACILITATOR repo, so the answer key + methodology stay tracked.
+# For a participant copy, `npm run participant` writes a build whose OWN
+# .gitignore uncomments the equivalent of the lines below so the answer key
+# can never be re-committed:
+#   docs/PLANTED.md
+#   docs/METHOD_*.md
+# --------------------------------------------------------------------------

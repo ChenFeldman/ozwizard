@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "ozwizard-store": {
+      "command": "npx",
+      "args": ["tsx", "mcp/server.ts"],
+      "env": {
+        "DATA_PATH": "./data/ozwizard.json"
+      }
+    }
+  }
+}

@@ -3,7 +3,16 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['dist', 'node_modules', 'data', 'coverage'],
+    // `web/` has its own React/Vite toolchain; Playwright writes report dirs.
+    ignores: [
+      'dist',
+      'node_modules',
+      'data',
+      'coverage',
+      'web',
+      'playwright-report',
+      'test-results',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
