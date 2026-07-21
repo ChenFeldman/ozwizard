@@ -73,6 +73,12 @@ Try a request:
 - **No DB, no native modules.** Keep dependencies pure-JS so the demo runs anywhere.
 - **Path rules apply** — see `.claude/rules/api.md` (for `src/api/**`) and
   `.claude/rules/core.md` (for `src/core/**`). Follow them when editing those areas.
+- @docs/package-facts/deb.md — per-type quirks the reviewer must know.
+- **Package-type behavior → read the wiki first.** When a task touches package-type /
+  `ecosystem` behavior (branching on it, grouping ecosystems, advisory loading, scan
+  cost/timeouts), read `docs/llm-wiki/package-types.md` **before** acting — do not assume.
+  The `docs/llm-wiki/` pages are a **load-on-demand** long-reference layer, not always-on
+  context; consult `docs/llm-wiki/index.md` for which page to pull in for a given task.
 
 ## Things to skip / avoid
 

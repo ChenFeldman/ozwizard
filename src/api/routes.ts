@@ -48,7 +48,7 @@ export const registerRoutes: FastifyPluginAsync = async (app) => {
     }
 
     const resolved = resolveDependencies(artifact.dependencies, registry);
-    const findings = await scanDependenciesLive(resolved, advisories);
+    const findings = await scanDependenciesLive(resolved, advisories, artifact.ecosystem);
     const { verdict, findings: evaluated } = evaluate(findings, resolved, DEFAULT_POLICY);
 
     const scan: Scan = {

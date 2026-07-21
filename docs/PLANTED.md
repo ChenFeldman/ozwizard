@@ -101,3 +101,22 @@ the code. Each entry gives the exact location, why it's wrong, and how to trigge
   suite stays green — part of the RCA exercise is to write the missing case.
 - **Fix direction:** Drop the `dep.direct &&` guard so the denylist applies to all
   resolved dependencies. See ticket **OZ-103**.
+
+---
+
+## Domain-fact bug
+
+### D1 — domain-fact bug: an ecosystem is misclassified in the scan loop
+
+- **Location:** `src/core/scanner.ts:122` (`PER_PACKAGE_ECOSYSTEMS`), exercised at
+  `src/core/scanner.ts:152` (`loadAdvisorySource` called per dependency inside the live
+  scan loop). Wired at `src/api/routes.ts:51`.
+- **What:** one entry in `PER_PACKAGE_ECOSYSTEMS` does not actually belong there. The
+  code path looks identical for every ecosystem and runs fine on the mock data, so
+  neither the code nor this entry reveals the defect.
+- **Why it's only catchable WITH the fact:** the reason is a per-type domain fact that
+  is **deliberately withheld from this answer-key file** (no explanation, and no
+  breadcrumb to where the fact lives). Restating or pointing to it here would leak the
+  answer and defeat the eval, which tests whether a reviewer who has been given the fact
+  catches the real cause while one without it invents a plausible-but-wrong reason (dead
+  branch / redundant filter) or calls it fine.

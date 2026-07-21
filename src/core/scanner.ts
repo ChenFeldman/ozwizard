@@ -118,18 +118,39 @@ async function refreshAdvisories(
   return advisories;
 }
 
+/** Ecosystems whose advisory metadata is loaded per package. */
+const PER_PACKAGE_ECOSYSTEMS = new Set(['npm', 'pypi', 'deb']);
+
+/**
+ * Load the advisory source relevant to one dependency, per ecosystem. For a
+ * per-package ecosystem the source is just that package's records.
+ */
+async function loadAdvisorySource(
+  dep: ResolvedDependency,
+  ecosystem: string,
+  advisories: Advisory[]
+): Promise<Advisory[]> {
+  if (PER_PACKAGE_ECOSYSTEMS.has(ecosystem)) {
+    const fresh = await refreshAdvisories(dep, advisories);
+    return fresh.filter((advisory) => advisory.package === dep.name);
+  }
+  const fresh = await refreshAdvisories(dep, advisories);
+  return fresh.filter((advisory) => advisory.package === dep.name);
+}
+
 /**
  * Live scan: refresh advisory data per dependency, then match. Used by the HTTP
  * scan endpoint so results reflect the latest upstream feed.
  */
 export async function scanDependenciesLive(
   resolved: ResolvedDependency[],
-  advisories: Advisory[]
+  advisories: Advisory[],
+  ecosystem: string
 ): Promise<Finding[]> {
   const findings: Finding[] = [];
   for (const dep of resolved) {
-    const fresh = await refreshAdvisories(dep, advisories);
-    for (const advisory of fresh) {
+    const source = await loadAdvisorySource(dep, ecosystem, advisories);
+    for (const advisory of source) {
       if (advisory.package === dep.name && satisfies(dep.version, advisory.range)) {
         findings.push({
           advisoryId: advisory.id,

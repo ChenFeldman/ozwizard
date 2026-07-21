@@ -6,6 +6,10 @@ data
 .env
 .DS_Store
 web/dist
+
+# Obsidian local vault state / boilerplate (editor cruft, not wiki content)
+.obsidian/
+docs/llm-wiki/OzWizard-Wiki/
 playwright-report
 test-results
 
