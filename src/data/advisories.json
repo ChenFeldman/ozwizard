@@ -1,0 +1,16 @@
+[
+  {
+    "id": "OZW-2021-0001",
+    "package": "log4jira",
+    "range": "<2.16.0",
+    "severity": "critical",
+    "title": "Remote code execution via unsanitized log message lookups (JNDI)"
+  },
+  {
+    "id": "OZW-2022-0007",
+    "package": "netfetch",
+    "range": ">=1.0.0",
+    "severity": "high",
+    "title": "Server-side request forgery (SSRF) in URL fetching"
+  }
+]
