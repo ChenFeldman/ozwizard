@@ -1,50 +1,90 @@
 ---
 name: deep-review
-description: Orchestrated deep review of named files — dispatches the security, performance, and convention reviewers in parallel, then synthesizes one ranked list of findings and a verdict. Invoke explicitly with /deep-review [files...].
+description: Reviews named files by dispatching read-only security, performance, and convention sub-agents in parallel and merging their findings into one ranked list and a verdict — use before shipping a change, invoked explicitly as /deep-review [files...].
 disable-model-invocation: true
 ---
 
 # deep-review
 
-You are the **orchestrator**. Run this inline (do NOT fork). Dispatch the three read-only
-reviewer subagents in parallel, then merge their findings into one ranked list + a verdict.
+## What this does and when
 
-## 1. Determine scope
+One orchestrator, three read-only reviewers, one answer. Use it on a change you are about
+to ship, when a single generalist pass would miss things because it is trying to hold
+security, performance and convention in its head at once. Each reviewer runs in its own
+context and never sees the others' findings, so when two of them land on the same line,
+that is real corroboration and not an echo.
 
-- If the user passed file paths as arguments, review exactly those.
-- Otherwise, derive the changed files from the diff:
-  `git diff --name-only HEAD` plus untracked (`git status --short`). Keep source files
-  (`src/**`, `test/**`). If there is nothing to review, say so and stop.
+## Input
 
-State the file list you're reviewing in one line.
+- `/deep-review src/a.ts src/b.ts` — review exactly those files.
+- `/deep-review` — derive scope from `git diff --name-only HEAD` plus untracked files from
+  `git status --short`, keeping `src/**` and `test/**`. Nothing to review ⇒ say so and stop.
 
-## 2. Dispatch the three reviewers IN PARALLEL
+## Output
 
-Send **one message with three Agent tool calls** (so they run concurrently), each scoped to
-the same file list:
+One ranked list, one line per finding, then exactly one verdict line.
 
-- `subagent_type: security-reviewer`
-- `subagent_type: performance-reviewer`
-- `subagent_type: convention-reviewer`
-
-Give each the explicit list of files (absolute paths) and tell it to review only those.
-Each returns a prioritized `BLOCKER/COMMENT/NIT` list with `file:line` and a one-line fix.
-
-## 3. Synthesize ONE ranked list
-
-- Merge all findings. **Deduplicate** the same `file:line` issue raised by more than one
-  reviewer (keep the sharpest wording, note the overlap).
-- Sort by severity: all **BLOCKER**, then **COMMENT**, then **NIT**. Within a tier, order by
-  blast radius.
-- Keep each finding to one line: `SEVERITY  file:line — problem — one-line fix  [tag]`
-  where tag ∈ {sec, perf, conv}.
-
-## 4. Emit a verdict
-
-End with exactly one:
+```
+SEVERITY  file:line — problem — one-line fix  [tag]        tag ∈ {sec, perf, conv}
+```
 
 - **REQUEST-CHANGES** — any BLOCKER present.
 - **APPROVE-WITH-NITS** — only COMMENT/NIT present.
 - **APPROVE** — nothing of substance found.
 
-Add a one-sentence rationale. Do not modify any files — this is a review.
+Plus a one-sentence rationale. No files are modified — this is a review.
+
+## Flow
+
+1. **Scope** — resolve the file list, state it in one line.
+2. **Dispatch** — one message, three `Agent` calls, so they run concurrently. Give each the
+   absolute paths and tell it to review only those.
+3. **Synthesize** — merge; deduplicate the same `file:line` raised twice (keep the sharper
+   wording, note the overlap); sort BLOCKER → COMMENT → NIT, and within a tier by blast
+   radius.
+4. **Verdict** — emit one of the three above.
+
+Run this inline. Do **not** fork the orchestrator.
+
+## Sub-agents used
+
+| `subagent_type`        | Catches                                                                | Model  |
+| ---------------------- | ---------------------------------------------------------------------- | ------ |
+| `security-reviewer`    | Hardcoded secrets, tokens/PII in logs, reflected input, injection      | sonnet |
+| `performance-reviewer` | Serial awaits over independent work, N+1, hot-path allocation, sync IO | sonnet |
+| `convention-reviewer`  | Swallowed errors, layering violations, ESM `.js` slips, naming drift   | sonnet |
+
+All three are read-only: `Read`, `Grep`, `Glob`. None can edit.
+
+## References
+
+- `.claude/rules/api.md` — validate-at-the-edge rules for `src/api/**`.
+- `.claude/rules/core.md` — purity/determinism rules for `src/core/**`.
+- `docs/llm-wiki/index.md` — load-on-demand long reference; read before judging
+  package-type or ecosystem behaviour.
+- `docs/package-facts/deb.md` — per-type quirks a reviewer is expected to know.
+- `docs/PLANTED.md` — issues planted for teaching. Reviewers **report** them; nobody fixes
+  them on sight.
+
+## Limits
+
+- Reviews only the files it is given. A bug caused by a file outside scope is invisible.
+- Three charters only — no duplication, structural, or test-coverage reviewer. Logic that
+  already exists elsewhere in the repo will not be flagged.
+- Static reading only. Nothing is executed, so no finding is backed by a failing test.
+- Wording and line numbers drift between runs; only the _issue_ is stable. That is why the
+  eval is judged by a model and not by string match.
+- The three charters overlap on glaring issues, so a single missing reviewer is often
+  covered by the others — see `evals/run.md`.
+- Read-only by construction. It will never fix what it finds.
+
+## Eval
+
+Lives in `evals/`, next to this file. Each case is three lines — one in `input.md`, two in
+`expected.md` — judged by `evals/judge.md`. Latest verdicts: `evals/results/latest.md`.
+
+```
+input:     src/util/config.ts — roster: security, performance, convention
+expect:    BLOCKER — hardcoded ADVISORY_API_KEY fallback in src/util/config.ts
+must not:  flag the zod defaults for PORT/HOST/LOG_LEVEL — they are intended
+```
