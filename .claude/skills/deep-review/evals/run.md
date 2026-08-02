@@ -7,15 +7,21 @@ it works.
 Two cases: one that must go **red** if the gate breaks (a planted BLOCKER), one that must
 stay **green** (a clean file).
 
-## A case is three lines
+## A case is a subject plus a contract
 
-`input.md` is line one. `expected.md` is lines two and three. That is the whole contract:
+Each case folder is self-contained: the code under review sits next to the two files that
+say what should happen to it. Nothing to look up elsewhere.
 
 ```
-input:     src/util/config.ts — roster: security, performance, convention
-expect:    BLOCKER — hardcoded ADVISORY_API_KEY fallback in src/util/config.ts
-must not:  flag the zod defaults for PORT/HOST/LOG_LEVEL — they are intended
+subject.ts   the code under review — a few lines, one deliberate problem (or none)
+input.md     what to review, and with which reviewers
+expected.md  expect:    what the run MUST contain
+             must not:  what the run MUST NOT say
 ```
+
+`case-1-blocker` and `case-2-clean` are the same function, one line apart — one commits the
+API key, the other reads it from the environment. That pair is the demo: it shows the gate
+keys on _committed credential_, not on the word "key".
 
 `must not:` is what stops a gate from passing the eval by shouting about everything.
 

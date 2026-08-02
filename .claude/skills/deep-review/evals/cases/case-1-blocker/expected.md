@@ -1,4 +1,5 @@
-# The finding the run must contain for this case to pass.
-expect: BLOCKER — hardcoded ADVISORY_API_KEY fallback in src/util/config.ts
-# The false alarm that fails the case even when the expected finding is present.
-must not: flag the zod defaults for PORT/HOST/LOG_LEVEL — they are intended
+# What the reviewer MUST find. If it misses this, the gate is broken.
+expect: BLOCKER — the API key is hardcoded in subject.ts instead of read from the environment
+
+# What the reviewer MUST NOT do. A gate that flags everything is worthless.
+must not: report a second BLOCKER — there is exactly one problem in this file
