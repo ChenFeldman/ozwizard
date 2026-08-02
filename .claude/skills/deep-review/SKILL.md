@@ -50,11 +50,16 @@ Run this inline. Do **not** fork the orchestrator.
 
 | `subagent_type`        | Catches                                                                | Model  |
 | ---------------------- | ---------------------------------------------------------------------- | ------ |
-| `security-reviewer`    | Hardcoded secrets, tokens/PII in logs, reflected input, injection      | sonnet |
+| `security-reviewer`    | Hardcoded secrets, tokens/PII in logs, reflected input, injection      | opus   |
 | `performance-reviewer` | Serial awaits over independent work, N+1, hot-path allocation, sync IO | sonnet |
-| `convention-reviewer`  | Swallowed errors, layering violations, ESM `.js` slips, naming drift   | sonnet |
+| `convention-reviewer`  | Swallowed errors, layering violations, ESM `.js` slips, naming drift   | haiku  |
 
 All three are read-only: `Read`, `Grep`, `Glob`. None can edit.
+
+The roster deliberately mixes models rather than running one everywhere: the charters
+that need open-ended judgement about whether something is exploitable get the expensive
+model, while the ones that pattern-match code against a standard already written down in
+`.claude/rules/` get the cheap one.
 
 ## References
 

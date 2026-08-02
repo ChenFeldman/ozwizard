@@ -6,3 +6,8 @@ web/dist
 web/node_modules
 playwright-report
 test-results
+
+# Byte-exact by contract: /anatomy prints its own spec, and an eval case is a
+# fixed line count. Prettier's markdown reflow would rewrite both.
+.claude/commands/anatomy.md
+.claude/skills/deep-review/evals/cases/**/expected.md
