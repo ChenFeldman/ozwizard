@@ -80,6 +80,32 @@ Try a request:
   The `docs/llm-wiki/` pages are a **load-on-demand** long-reference layer, not always-on
   context; consult `docs/llm-wiki/index.md` for which page to pull in for a given task.
 
+## The two indexes (codegraph & graphify)
+
+This repo carries two search indexes. They answer different questions — reach for the
+right one before grepping, and treat both as **orientation, not authority**.
+
+- **codegraph** — a local AST index of the **code**. Free and always fresh (34 files →
+  232 nodes / 462 edges, ~124 ms, 0 tokens, 552 KB SQLite; watcher lag ~1s). Use it for
+  "what calls this", "what breaks if I change this", "how does subsystem X work".
+  `codegraph_explore` returns **verbatim source** grouped by file, so it _cuts_ tokens —
+  one call instead of grepping and reading 4 files.
+- **graphify** — an LLM-built index of **everything else**: docs, tickets, design notes,
+  skills, configs (440 nodes / 670 edges over 95 files; ~213k tokens, ~6 min, 3 parallel
+  agents). It stores no code — just names, `file:line`, and edges, so it _adds_ tokens.
+  Use it for the question no grep can ask: **do the docs still agree with the code?**
+  It surfaces god nodes, AMBIGUOUS edges, and two files stating the same fact unlinked.
+- **Together:** graphify says _which decision governs this_ (e.g. `docs/design/OZ-102.md`,
+  `docs/package-facts/deb.md`); codegraph says _where it lands and what it breaks_
+  (`scanDependenciesLive`, scanner.ts:145); grep confirms nothing was missed.
+- **Known limit — state it, don't hide it.** Both missed 4 of 6 `evaluate()` call sites
+  here: they sit inside `it()` callbacks with no enclosing named function. **grep is
+  still the tiebreaker** for exhaustive impact analysis.
+- **Freshness.** codegraph rebuilds identically from the AST — trust it. graphify is a
+  **snapshot**; if the answer depends on a file changed since the last build, re-run
+  `graphify --update` or fall back to reading the file.
+- Demo/teaching walkthrough: `.claude/skills/index-demo/SKILL.md`.
+
 ## Things to skip / avoid
 
 - **`docs/PLANTED.md` lists issues that are deliberately planted for teaching.** Do NOT

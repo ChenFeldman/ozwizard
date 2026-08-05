@@ -153,6 +153,87 @@ curl -s localhost:3000/policies
 
 ---
 
+## How this repo uses codegraph & graphify
+
+Two search indexes ship with the workshop. They are not competitors and neither replaces
+grep — they reduce **how much you have to read before you know where to look**.
+
+> **codegraph indexes _code_ — free and instant. graphify indexes _everything else_ —
+> slow and expensive.**
+
+|           | codegraph                            | graphify                                     |
+| --------- | ------------------------------------ | -------------------------------------------- |
+| indexes   | code only — **0 markdown files**     | code **+ 54 doc files** (205 doc-side nodes) |
+| size here | 34 files → 232 nodes, 462 edges      | 95 files → 440 nodes, 670 edges, 25 clusters |
+| build     | **124 ms, 0 tokens**, 552 KB SQLite  | **~6 min, 213k tokens**, 3 parallel agents   |
+| returns   | verbatim source → **cuts** tokens    | names + `file:line` → **adds** tokens        |
+| rebuild   | byte-identical every time (pure AST) | non-deterministic (LLM)                      |
+| freshness | file watcher, ~1s lag                | snapshot until you re-run `--update`         |
+
+### What each one is actually for — real examples from this repo
+
+**codegraph — "I'm about to change `evaluate()`. What breaks?"**
+`codegraph_callers evaluate` → `registerRoutes` (routes.ts:35) and `POST /scans`
+(routes.ts:41), and `codegraph_explore` hands back the source inline. Without it the
+agent greps, guesses which hits matter, then reads 2–4 whole files into context.
+
+**graphify — "Do our docs still tell the truth?"** No grep can answer this, because
+disagreeing files share no searchable string. On this repo it found that
+`docs/package-facts/deb.md` and `docs/llm-wiki/package-types.md` state the same deb
+gotcha with nothing linking them, and it ranked `Repository` (12 edges) and `Store`
+(11) as the true core abstractions. Its `GRAPH_REPORT.md` also flags **AMBIGUOUS** edges
+— claims it could not reconcile between two files.
+
+**Together — "Why is the scanner slow on deb packages?"** Needs code _and_ the design
+prose behind it:
+
+1. **graphify** → which design note governs it: `docs/design/OZ-102.md`, plus the
+   _30-second request timeout blow-up_ fact in `docs/package-facts/deb.md`.
+2. **codegraph** → where that lands: `scanDependenciesLive` (`src/core/scanner.ts:145`),
+   2 callers in `routes.ts`, ⚠️ no covering tests — and the serial `await` in the loop.
+3. **grep** → confirm nothing was missed.
+
+### The honest limit — say it out loud
+
+Ground truth for `evaluate(` in this 34-file repo is 6 hits; **both indexes report 2**.
+The 4 they miss live inside `it()` callbacks with no enclosing named function:
+
+```bash
+grep -rn --include='*.ts' "evaluate(" src test   # 6 — the tiebreaker
+```
+
+Sell them as **accelerators for orientation, not authorities for impact analysis.**
+
+### Setup, and what to commit
+
+```bash
+brew install codegraph                       # then: codegraph init
+uv tool install graphifyy && graphify install
+```
+
+Neither tool is git-ignored by default — add this yourself:
+
+```gitignore
+.codegraph/            # local, rebuilds in 124ms on any laptop
+graphify-out/cache/
+graphify-out/.graphify_*   # stores an absolute path to your home directory
+```
+
+Do commit `graphify-out/graph.json` + `GRAPH_REPORT.md` — that's the **shared brain**,
+built once in CI. Otherwise your team has eight different ones.
+
+### How a team would measure the value
+
+Three numbers over two weeks: **tokens per agent task** (codegraph should pull it down),
+**time-to-first-correct-file** for a new joiner, and **doc-drift items found per build**
+(graphify's only real product). Cost is one CI run of graphify per week; codegraph is free.
+
+A scripted 10-minute walkthrough lives in
+[`.claude/skills/index-demo/SKILL.md`](.claude/skills/index-demo/SKILL.md) — run
+`/index-demo` inside Claude Code.
+
+---
+
 ## Using this safely
 
 You do **not** need to clone this to benefit from it. Pick the path that fits your org's
