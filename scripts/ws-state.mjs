@@ -116,6 +116,23 @@ function npmTest() {
   }
 }
 
+/** In the `after` state the hooks are live, so prove they still behave. */
+function selfTest() {
+  try {
+    const out = execFileSync('node', [p('scripts', 'ws-selftest.mjs')], {
+      cwd: ROOT,
+      encoding: 'utf8',
+      stdio: 'pipe',
+    });
+    const rows = [...out.matchAll(/^(\d+)\/(\d+) rows PASS$/gm)].map((m) => m[0]);
+    return { ok: true, detail: rows.join(' + ') || 'all rows PASS' };
+  } catch (err) {
+    const out = `${err.stdout ?? ''}${err.stderr ?? ''}`;
+    const fails = (out.match(/\| FAIL/g) ?? []).length;
+    return { ok: false, detail: fails ? `${fails} hook row(s) FAILED` : 'ws:selftest failed' };
+  }
+}
+
 function check() {
   const rows = [];
   const row = (item, ok, detail) => rows.push({ item, ok, detail });
@@ -177,6 +194,11 @@ function check() {
 
   const test = npmTest();
   row('npm test', test.ok, test.detail);
+
+  if (active === 'after') {
+    const hooks = selfTest();
+    row('npm run ws:selftest', hooks.ok, hooks.detail);
+  }
 
   console.log('| Item | Result | Detail |');
   console.log('| --- | --- | --- |');

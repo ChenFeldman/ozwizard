@@ -1,0 +1,8 @@
+# One path prefix or glob per line, relative to the repo root.
+# A line ending in "/" protects everything beneath it.
+# Lines starting with "#" are comments.
+config/policy.json
+config/denylist.json
+data/customers/
+.env
+.claude/

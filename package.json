@@ -21,7 +21,8 @@
     "ws:before": "node scripts/ws-state.mjs before",
     "ws:after": "node scripts/ws-state.mjs after",
     "ws:reset": "node scripts/ws-state.mjs reset",
-    "ws:check": "node scripts/ws-state.mjs check"
+    "ws:check": "node scripts/ws-state.mjs check",
+    "ws:selftest": "node scripts/ws-selftest.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
