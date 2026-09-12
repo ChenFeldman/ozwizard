@@ -63,11 +63,28 @@ describe('policy', () => {
     expect(result.findings.map((f) => f.advisoryId)).toContain('POLICY-DENYLIST');
   });
 
-  it('does not block denylisted transitive dependency', () => {
+  // OZ-105: a denylisted package pulled in transitively must block too — the
+  // denylist is policy about the whole resolved tree, not just direct deps.
+  it('blocks denylisted transitive dependency', () => {
     const resolved = [transitive('left-hand', '2.0.0', 'parent@1.0.0')];
     const result = evaluate([], resolved, DEFAULT_POLICY);
-    expect(result.verdict).toBe('allow');
-    expect(result.findings).toEqual([]);
+    expect(result.verdict).toBe('block');
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({
+      advisoryId: 'POLICY-DENYLIST',
+      package: 'left-hand',
+      direct: false,
+      path: ['parent@1.0.0', 'left-hand@2.0.0'],
+    });
+  });
+
+  // Denylist is not subject to transitive dampening: it is a policy hit, not a
+  // severity-driven one, so a deep hit blocks exactly like a direct one.
+  it('blocks a denylisted dep found deep in the tree alongside a benign direct dep', () => {
+    const resolved = [direct('safe', '1.0.0'), transitive('left-hand', '2.0.0', 'safe@1.0.0')];
+    const result = evaluate([], resolved, DEFAULT_POLICY);
+    expect(result.verdict).toBe('block');
+    expect(result.findings.map((f) => f.package)).toEqual(['left-hand']);
   });
 
   it('blocks on a fresh critical advisory', () => {
