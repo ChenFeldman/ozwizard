@@ -22,7 +22,10 @@
     "ws:after": "node scripts/ws-state.mjs after",
     "ws:reset": "node scripts/ws-state.mjs reset",
     "ws:check": "node scripts/ws-state.mjs check",
-    "ws:selftest": "node scripts/ws-selftest.mjs"
+    "ws:selftest": "node scripts/ws-selftest.mjs",
+    "ws:demo": "node scripts/ws-demo.mjs",
+    "ws:demo:done": "node scripts/ws-demo.mjs done",
+    "ws:doccheck": "node scripts/ws-doccheck.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",

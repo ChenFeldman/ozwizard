@@ -133,6 +133,23 @@ function selfTest() {
   }
 }
 
+/** The workshop docs have to keep matching the hooks and tickets on disk. */
+function docCheck() {
+  try {
+    const out = execFileSync('node', [p('scripts', 'ws-doccheck.mjs')], {
+      cwd: ROOT,
+      encoding: 'utf8',
+      stdio: 'pipe',
+    });
+    const m = /^(\d+\/\d+) rows PASS$/m.exec(out);
+    return { ok: true, detail: m ? m[1] + ' doc rows PASS' : 'all doc rows PASS' };
+  } catch (err) {
+    const out = `${err.stdout ?? ''}${err.stderr ?? ''}`;
+    const fails = (out.match(/\| FAIL/g) ?? []).length;
+    return { ok: false, detail: fails ? `${fails} doc row(s) FAILED` : 'ws:doccheck failed' };
+  }
+}
+
 function check() {
   const rows = [];
   const row = (item, ok, detail) => rows.push({ item, ok, detail });
@@ -191,6 +208,9 @@ function check() {
     /catch\s*{\s*return 'allow';/.test(thresholdFor),
     "thresholdFor() returns 'allow' on error"
   );
+
+  const docs = docCheck();
+  row('npm run ws:doccheck', docs.ok, docs.detail);
 
   const test = npmTest();
   row('npm test', test.ok, test.detail);
