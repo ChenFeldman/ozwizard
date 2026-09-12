@@ -1,7 +1,8 @@
 node_modules
 dist
 coverage
-/data/
+/data/*
+!/data/customers/
 *.log
 .env
 .DS_Store
@@ -24,3 +25,8 @@ participant-build
 #   docs/PLANTED.md
 #   docs/METHOD_*.md
 # --------------------------------------------------------------------------
+
+# Workshop runtime state (see scripts/ws-state.mjs)
+workshop/state/ACTIVE
+workshop/.counters
+.claude/audit.log

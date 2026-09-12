@@ -13,9 +13,10 @@ import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { loadAdvisories, loadRegistry } from '../data/index.js';
 import { recordEscalation } from '../core/escalations.js';
-import { DEFAULT_POLICY, evaluate } from '../core/policy.js';
+import { evaluate } from '../core/policy.js';
 import { resolveDependencies, scanDependenciesLive } from '../core/scanner.js';
 import type { Scan } from '../core/types.js';
+import { loadPolicyConfig, policyForCustomer } from '../util/policyConfig.js';
 import { CreateEscalationSchema, CreateScanSchema } from './schemas.js';
 
 /** Validate `body` with `schema`, replying 400 on failure. Returns null when invalid. */
@@ -49,7 +50,8 @@ export const registerRoutes: FastifyPluginAsync = async (app) => {
 
     const resolved = resolveDependencies(artifact.dependencies, registry);
     const findings = await scanDependenciesLive(resolved, advisories, artifact.ecosystem);
-    const { verdict, findings: evaluated } = evaluate(findings, resolved, DEFAULT_POLICY);
+    const policy = policyForCustomer(body.customerId);
+    const { verdict, findings: evaluated } = evaluate(findings, resolved, policy, new Date());
 
     const scan: Scan = {
       id: randomUUID(),
@@ -84,6 +86,6 @@ export const registerRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.get('/policies', async () => {
-    return { policy: DEFAULT_POLICY, advisoryCount: advisories.length };
+    return { policy: loadPolicyConfig(), advisoryCount: advisories.length };
   });
 };

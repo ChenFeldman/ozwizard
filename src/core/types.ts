@@ -31,6 +31,8 @@ export interface Advisory {
   range: string;
   severity: Severity;
   title: string;
+  /** ISO date the advisory was published upstream. */
+  publishedAt?: string;
 }
 
 /** A dependency after transitive resolution. */
@@ -50,6 +52,8 @@ export interface Finding {
   direct: boolean;
   path: string[];
   title: string;
+  /** ISO date the matched advisory was published upstream. */
+  publishedAt?: string;
 }
 
 /** The three possible policy outcomes. */

@@ -100,6 +100,7 @@ export function scanDependencies(
           direct: dep.direct,
           path: dep.path,
           title: advisory.title,
+          publishedAt: advisory.publishedAt,
         });
       }
     }
@@ -160,6 +161,7 @@ export async function scanDependenciesLive(
           direct: dep.direct,
           path: dep.path,
           title: advisory.title,
+          publishedAt: advisory.publishedAt,
         });
       }
     }

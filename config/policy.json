@@ -1,0 +1,10 @@
+{
+  "thresholds": {
+    "none": "allow",
+    "low": "warn",
+    "moderate": "warn",
+    "high": "block",
+    "critical": "block"
+  },
+  "dampenTransitive": true
+}

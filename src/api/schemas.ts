@@ -22,6 +22,8 @@ export const CreateArtifactSchema = z.object({
 /** POST /scans body: which indexed artifact to scan. */
 export const CreateScanSchema = z.object({
   artifactId: z.string().min(1),
+  /** Optional customer whose policy overrides apply to this scan. */
+  customerId: z.string().min(1).optional(),
 });
 
 /** POST /escalations body: override a scan verdict, with a reason. */

@@ -9,6 +9,11 @@
  *   3. Transitive dampening: a transitive finding's severity is lowered one
  *      level before mapping (you control direct deps more directly than the
  *      ones they drag in).
+ *   4. Advisory age: a finding whose advisory was published more than 180 days
+ *      ago contributes `warn` rather than `block`.
+ *
+ * The policy config is an input, not something this module reads from disk; see
+ * `src/util/policyConfig.ts` for loading.
  */
 import { SEVERITIES } from './types.js';
 import type {
@@ -20,18 +25,9 @@ import type {
   Verdict,
 } from './types.js';
 
-/** The default policy, also served verbatim from GET /policies. */
-export const DEFAULT_POLICY: PolicyConfig = {
-  denylist: ['left-hand'],
-  thresholds: {
-    none: 'allow',
-    low: 'warn',
-    moderate: 'warn',
-    high: 'block',
-    critical: 'block',
-  },
-  dampenTransitive: true,
-};
+/** Advisories older than this contribute `warn` instead of `block`. */
+const ADVISORY_AGE_DAYS = 180;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const severityRank = (s: Severity): number => SEVERITIES.indexOf(s);
 
@@ -56,6 +52,14 @@ function thresholdFor(policy: PolicyConfig, severity: Severity): Verdict {
   }
 }
 
+/** Was this finding's advisory published more than ADVISORY_AGE_DAYS before `now`? */
+function isAgedAdvisory(finding: Finding, now?: Date): boolean {
+  if (!now || !finding.publishedAt) return false;
+  const published = Date.parse(finding.publishedAt);
+  if (Number.isNaN(published)) return false;
+  return now.getTime() - published > ADVISORY_AGE_DAYS * DAY_MS;
+}
+
 /**
  * Evaluate findings against a policy. `resolved` is needed so the denylist can
  * block packages that have no advisory at all; matching denylist entries are
@@ -64,7 +68,8 @@ function thresholdFor(policy: PolicyConfig, severity: Severity): Verdict {
 export function evaluate(
   findings: Finding[],
   resolved: ResolvedDependency[],
-  policy: PolicyConfig = DEFAULT_POLICY
+  policy: PolicyConfig,
+  now?: Date
 ): Evaluation {
   const denyFindings: Finding[] = resolved
     .filter((dep) => dep.direct && policy.denylist.includes(dep.name))
@@ -91,7 +96,11 @@ export function evaluate(
   for (const finding of findings) {
     const effective =
       policy.dampenTransitive && !finding.direct ? dampen(finding.severity) : finding.severity;
-    verdict = maxVerdict(verdict, thresholdFor(policy, effective));
+    let contribution = thresholdFor(policy, effective);
+    if (contribution === 'block' && isAgedAdvisory(finding, now)) {
+      contribution = 'warn';
+    }
+    verdict = maxVerdict(verdict, contribution);
   }
 
   return { verdict, findings: allFindings };

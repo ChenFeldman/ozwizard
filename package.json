@@ -17,7 +17,11 @@
     "dev:web": "npm run dev --prefix web",
     "dev:all": "concurrently -k -n api,web -c blue,green \"npm run dev\" \"npm run dev:web\"",
     "e2e": "playwright test",
-    "participant": "bash scripts/participant-build.sh"
+    "participant": "bash scripts/participant-build.sh",
+    "ws:before": "node scripts/ws-state.mjs before",
+    "ws:after": "node scripts/ws-state.mjs after",
+    "ws:reset": "node scripts/ws-state.mjs reset",
+    "ws:check": "node scripts/ws-state.mjs check"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",

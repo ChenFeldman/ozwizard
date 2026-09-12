@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_POLICY, evaluate } from '../src/core/policy.js';
+import { evaluate } from '../src/core/policy.js';
+import { DEFAULT_POLICY } from '../src/util/policyConfig.js';
 import type { Finding, ResolvedDependency } from '../src/core/types.js';
 
 const direct = (name: string, version: string): ResolvedDependency => ({
@@ -53,5 +54,47 @@ describe('policy', () => {
 
   it('allows when there are no findings', () => {
     expect(evaluate([], [direct('safe', '1.0.0')], DEFAULT_POLICY).verdict).toBe('allow');
+  });
+
+  it('blocks denylisted direct dependency', () => {
+    const resolved = [direct('left-hand', '2.0.0')];
+    const result = evaluate([], resolved, DEFAULT_POLICY);
+    expect(result.verdict).toBe('block');
+    expect(result.findings.map((f) => f.advisoryId)).toContain('POLICY-DENYLIST');
+  });
+
+  it('does not block denylisted transitive dependency', () => {
+    const resolved = [transitive('left-hand', '2.0.0', 'parent@1.0.0')];
+    const result = evaluate([], resolved, DEFAULT_POLICY);
+    expect(result.verdict).toBe('allow');
+    expect(result.findings).toEqual([]);
+  });
+
+  it('blocks on a fresh critical advisory', () => {
+    const now = new Date('2026-09-12T00:00:00.000Z');
+    const resolved = [direct('log4jira', '2.10.0')];
+    const findings = [
+      finding({
+        package: 'log4jira',
+        severity: 'critical',
+        direct: true,
+        publishedAt: '2026-09-01T00:00:00.000Z',
+      }),
+    ];
+    expect(evaluate(findings, resolved, DEFAULT_POLICY, now).verdict).toBe('block');
+  });
+
+  it('warns when that same critical advisory is 200 days old', () => {
+    const now = new Date('2026-09-12T00:00:00.000Z');
+    const resolved = [direct('log4jira', '2.10.0')];
+    const findings = [
+      finding({
+        package: 'log4jira',
+        severity: 'critical',
+        direct: true,
+        publishedAt: '2026-02-24T00:00:00.000Z',
+      }),
+    ];
+    expect(evaluate(findings, resolved, DEFAULT_POLICY, now).verdict).toBe('warn');
   });
 });
