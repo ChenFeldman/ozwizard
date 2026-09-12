@@ -152,9 +152,6 @@ function setup(n) {
 
   console.log('Watch for:\n');
   for (const w of rec.watch) console.log(`  - ${w}`);
-
-  console.log(`\nExport the finished session to:\n\n    ${exportPath(n)}\n`);
-  console.log(`Then confirm it with:  npm run ws:demo:done -- ${n}\n`);
 }
 
 function done(n) {
