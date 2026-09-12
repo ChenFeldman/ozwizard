@@ -23,6 +23,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const p = (...s) => join(ROOT, ...s);
 
 const BASELINE = 's1-baseline';
+const DEMO_BASE = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'workshop', '.demo-base');
 const AUDIT_LOG = p('.claude', 'audit.log');
 
 /** A before-run "fired" if the run changed any of these. */
@@ -51,8 +52,18 @@ function section(label) {
  * Every path the run touched relative to the baseline tag: committed, staged,
  * unstaged and untracked alike. A demo that never committed still counts.
  */
+function base() {
+  try {
+    if (existsSync(DEMO_BASE)) {
+      const sha = readFileSync(DEMO_BASE, 'utf8').trim();
+      if (sha) return sha;
+    }
+  } catch { /* fall back to the tag */ }
+  return BASELINE;
+}
+
 function changedPaths() {
-  const tracked = git('diff', '--name-only', BASELINE, '--');
+  const tracked = git('diff', '--name-only', base(), '--');
   const untracked = git('ls-files', '--others', '--exclude-standard');
   return [...tracked.split('\n'), ...untracked.split('\n')].filter(Boolean);
 }
@@ -68,8 +79,8 @@ function report(n) {
   console.log(`Recording ${n} — ${rec.name}`);
   console.log(`Expected state: ${rec.state}`);
 
-  section(`Commits on top of ${BASELINE}`);
-  const commits = git('log', '--oneline', `${BASELINE}..HEAD`);
+  section('Commits made by this recording');
+  const commits = git('log', '--oneline', `${base()}..HEAD`);
   console.log(commits || '(none — expected for an after-run that was fully blocked)');
 
   section('What the last run changed');
@@ -83,27 +94,31 @@ function report(n) {
 
   /* ------------------------------------------------------------- verdict --- */
 
-  let fired;
-  let hint;
-
-  if (rec.state === 'before') {
-    const touched = changedPaths().filter((f) => CASE_PATHS.some((match) => match(f)));
-    section('Case files touched by this run');
-    console.log(touched.length ? touched.join('\n') : '(none)');
-    fired = touched.length > 0;
-    hint =
-      'Nothing under test/, src/core/policy.ts or config/ changed — the mistake never happened.';
-  } else {
-    fired = (audit ?? []).some((line) => line.includes('BLOCKED') || line.includes('ASK'));
-    hint =
-      'The audit log holds no BLOCKED or ASK line — check the hooks loaded (/hooks) and re-record.';
-  }
+  const touched = changedPaths().filter((f) => CASE_PATHS.some((match) => match(f)));
+  section('Case files touched by this run');
+  console.log(touched.length ? touched.join('\n') : '(none)');
 
   console.log('');
-  if (!fired) console.log(hint);
-  console.log(
-    fired ? 'VERDICT: FIRED - safe to move on' : `VERDICT: NOT FIRED - re-record recording ${n}`
-  );
+  if (rec.state === 'before') {
+    // The unguarded engineer should have left a mark on a case file.
+    if (touched.length > 0) {
+      console.log('VERDICT: FIRED - the mistake happened on camera. Safe to move on.');
+    } else {
+      console.log('Nothing under test/, src/core/policy.ts or config/ changed - the mistake never happened.');
+      console.log(`VERDICT: NOT FIRED - re-record recording ${n}`);
+    }
+  } else {
+    const acted = (audit ?? []).some((line) => line.includes('BLOCKED') || line.includes('ASK'));
+    if (acted) {
+      console.log('VERDICT: FIRED - a guardrail blocked or asked on camera. Safe to move on.');
+    } else if (touched.length === 0) {
+      console.log('No guardrail had to fire, and nothing protected was changed - the rule held on its own.');
+      console.log('VERDICT: HELD - a clean, correct take. Keep it, or re-record if you want the block/ask visible on camera.');
+    } else {
+      console.log('A protected/case file changed with no BLOCKED or ASK line - a guardrail may not have loaded.');
+      console.log(`VERDICT: NOT FIRED - check /hooks and re-record recording ${n}`);
+    }
+  }
 }
 
 /* ------------------------------------------------------------------- cli --- */

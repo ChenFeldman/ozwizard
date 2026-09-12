@@ -105,6 +105,9 @@ function reset() {
   // NOT settings.local.json: it carries the session hygiene the recordings rely on
   // (auto-memory off, the ozwizard-store MCP server, the skill suppressions). Reset
   // runs before every recording, so deleting it here silently undid all three.
+  // Restore the guardrail settings to the pristine (pre-workshop) state, so a bare
+  // reset truly disarms the hooks instead of leaving the last state's hooks live.
+  writeFileSync(SETTINGS, read(stateFile('before', 'settings.json')));
   rm(p('.claude', 'audit.log'));
   rm(p('workshop', '.counters'));
   writeFileSync(CLAUDE_MD, `${stripRuleBlock(read(CLAUDE_MD)).trimEnd()}\n`);

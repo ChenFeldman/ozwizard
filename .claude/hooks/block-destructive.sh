@@ -59,9 +59,8 @@ case "$padded" in
   *" docker "*|"docker "*|*" docker"|"docker")
     deny "docker commands are out of scope for this workshop (no containers, no daemon)." ;;
 esac
-case "$cmd" in
-  *"ws-state.mjs"*)
-    deny "scripts/ws-state.mjs rewrites the workshop state and reseeds data. Use the npm scripts, and only between exercises." ;;
-esac
+if printf '%s' "$cmd" | grep -Eq 'node[[:space:]]+([^|;&]*/)?ws-state\.mjs|(^|[[:space:]])\./([^ ]*/)?ws-state\.mjs'; then
+  deny "running scripts/ws-state.mjs directly rewrites the workshop state and reseeds data. Use the npm scripts (ws:before / ws:after / ws:reset), and only between exercises."
+fi
 
 exit 0

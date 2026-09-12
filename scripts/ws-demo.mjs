@@ -138,6 +138,13 @@ function setup(n) {
     'Prep failed: the repo is not clean after reset. Run "npm run ws:reset" then try again.'
   );
 
+  // Mark where this run starts, so ws:demo:check diffs only what THIS recording did
+  // (not the accumulated workshop commits, and not the previous take's commit).
+  writeFileSync(
+    p('workshop', '.demo-base'),
+    `${execSync('git rev-parse HEAD', { cwd: ROOT }).toString().trim()}\n`
+  );
+
   // A recording must never depend on what an earlier take remembered.
   writeFileSync(
     p('.claude', 'settings.local.json'),
