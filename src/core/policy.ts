@@ -72,7 +72,7 @@ export function evaluate(
   now?: Date
 ): Evaluation {
   const denyFindings: Finding[] = resolved
-    .filter((dep) => dep.direct && policy.denylist.includes(dep.name))
+    .filter((dep) => policy.denylist.includes(dep.name))
     .map((dep) => ({
       advisoryId: 'POLICY-DENYLIST',
       package: dep.name,
