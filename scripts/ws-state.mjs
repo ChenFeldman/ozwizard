@@ -102,7 +102,9 @@ function reset() {
       stdio: 'inherit',
     }
   );
-  rm(p('.claude', 'settings.local.json'));
+  // NOT settings.local.json: it carries the session hygiene the recordings rely on
+  // (auto-memory off, the ozwizard-store MCP server, the skill suppressions). Reset
+  // runs before every recording, so deleting it here silently undid all three.
   rm(p('.claude', 'audit.log'));
   rm(p('workshop', '.counters'));
   writeFileSync(CLAUDE_MD, `${stripRuleBlock(read(CLAUDE_MD)).trimEnd()}\n`);
