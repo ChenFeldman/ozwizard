@@ -12,7 +12,7 @@
  * It never records anything itself — a recording is a human in a fresh Claude Code
  * session. This script only guarantees the repo is in the same shape every time.
  */
-import { execFileSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -115,6 +115,16 @@ function setup(n) {
   const rec = RECORDINGS[n];
 
   rule(`Preparing recording ${n} — ${rec.name}`);
+
+  // Every recording starts on the clean build branch, whatever the last demo left
+  // behind — a fix branch, a stray commit, a dirty tree. -f discards all of it.
+  try {
+    execSync('git checkout -f workshop-s1', { cwd: ROOT, stdio: 'inherit' });
+    console.log('ws-demo: on workshop-s1');
+  } catch {
+    fail('Prep failed: could not switch to workshop-s1. Resolve the checkout, then try again.');
+  }
+
   npm(
     'ws:reset',
     'Prep failed: could not restore the case files. Check that the "s1-baseline" tag exists (git tag), then try again.'
