@@ -1,0 +1,26 @@
+[
+  {
+    "id": "seed-hello-web",
+    "name": "hello-web",
+    "version": "1.0.0",
+    "ecosystem": "npm",
+    "dependencies": [{ "name": "express-lite", "version": "4.2.0" }],
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-data-pipeline",
+    "name": "data-pipeline",
+    "version": "2.1.0",
+    "ecosystem": "npm",
+    "dependencies": [{ "name": "config-loader", "version": "1.0.0" }],
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "seed-legacy-service",
+    "name": "legacy-service",
+    "version": "0.9.0",
+    "ecosystem": "npm",
+    "dependencies": [{ "name": "log4jira", "version": "2.10.0" }],
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  }
+]

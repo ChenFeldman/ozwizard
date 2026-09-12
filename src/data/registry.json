@@ -1,0 +1,8 @@
+{
+  "_comment": "Mock dependency graph: 'name@version' -> its direct dependencies. Used by the scanner to resolve transitive deps. A missing key means the package has no dependencies.",
+  "express-lite@4.2.0": [{ "name": "tiny-color", "version": "0.5.0" }],
+  "config-loader@1.0.0": [{ "name": "netfetch", "version": "1.2.0" }],
+  "tiny-color@0.5.0": [],
+  "netfetch@1.2.0": [],
+  "log4jira@2.10.0": []
+}
