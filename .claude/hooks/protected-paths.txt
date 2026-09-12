@@ -3,6 +3,5 @@
 # Lines starting with "#" are comments.
 config/policy.json
 config/denylist.json
-data/customers/
 .env
 .claude/
