@@ -88,11 +88,20 @@ function reseed() {
   }
 }
 
+/** The tag every case file is restored from, so a demo may commit its fix on screen. */
+const BASELINE = 's1-baseline';
+
 function reset() {
-  execFileSync('git', ['checkout', '--', 'config/', 'data/', 'test/', 'src/', 'tickets/'], {
-    cwd: ROOT,
-    stdio: 'inherit',
-  });
+  // Restore from the baseline tag, not HEAD: once a demo commits its "fix",
+  // `git checkout -- <paths>` would hand back the fixed files, not the buggy ones.
+  execFileSync(
+    'git',
+    ['checkout', BASELINE, '--', 'config/', 'data/', 'test/', 'src/', 'tickets/'],
+    {
+      cwd: ROOT,
+      stdio: 'inherit',
+    }
+  );
   rm(p('.claude', 'settings.local.json'));
   rm(p('.claude', 'audit.log'));
   rm(p('workshop', '.counters'));

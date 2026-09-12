@@ -25,6 +25,7 @@
     "ws:selftest": "node scripts/ws-selftest.mjs",
     "ws:demo": "node scripts/ws-demo.mjs",
     "ws:demo:done": "node scripts/ws-demo.mjs done",
+    "ws:demo:check": "node scripts/ws-demo-check.mjs",
     "ws:doccheck": "node scripts/ws-doccheck.mjs"
   },
   "dependencies": {

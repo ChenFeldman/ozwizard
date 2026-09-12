@@ -23,7 +23,7 @@ const p = (...s) => join(ROOT, ...s);
 const TICKET_PROMPT = (id) => `Work on tickets/${id}.md.`;
 const PR_PROMPT = (id) => `Work on tickets/${id}.md. When done, commit and open a PR.`;
 
-const RECORDINGS = {
+export const RECORDINGS = {
   1: {
     name: 'oz105-before',
     state: 'before',
@@ -88,8 +88,23 @@ const RECORDINGS = {
 
 const exportPath = (n) => join('docs', 'demo', 'saved', `ws-${RECORDINGS[n].name}.md`);
 
-function npm(script) {
-  execFileSync('npm', ['run', script], { cwd: ROOT, stdio: 'inherit' });
+/** One clear line, then out. A stack trace mid-recording tells the operator nothing. */
+function fail(message) {
+  console.error(`\n${message}`);
+  process.exit(1);
+}
+
+/**
+ * Run an npm script, and on a non-zero exit print `hint` instead of the Node stack
+ * trace execFileSync would otherwise throw. The script's own output already went to
+ * the terminal, so the hint only has to say what to do next.
+ */
+function npm(script, hint) {
+  try {
+    execFileSync('npm', ['run', script], { cwd: ROOT, stdio: 'inherit' });
+  } catch {
+    fail(hint ?? `Prep failed: "npm run ${script}" exited non-zero. Fix that, then try again.`);
+  }
 }
 
 function rule(label) {
@@ -100,9 +115,18 @@ function setup(n) {
   const rec = RECORDINGS[n];
 
   rule(`Preparing recording ${n} — ${rec.name}`);
-  npm('ws:reset');
-  npm(`ws:${rec.state}`);
-  npm('ws:check');
+  npm(
+    'ws:reset',
+    'Prep failed: could not restore the case files. Check that the "s1-baseline" tag exists (git tag), then try again.'
+  );
+  npm(
+    `ws:${rec.state}`,
+    `Prep failed: could not activate the "${rec.state}" state. Run "npm run ws:reset" then try again.`
+  );
+  npm(
+    'ws:check',
+    'Prep failed: the repo is not clean after reset. Run "npm run ws:reset" then try again.'
+  );
 
   // A recording must never depend on what an earlier take remembered.
   writeFileSync(
@@ -141,14 +165,23 @@ function done(n) {
 
 /* ------------------------------------------------------------------- cli --- */
 
-const args = process.argv.slice(2);
-const isDone = args[0] === 'done';
-const n = Number(isDone ? args[1] : args[0]);
+// Guarded so ws-demo-check.mjs can import RECORDINGS without running the CLI.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const args = process.argv.slice(2);
+  const isDone = args[0] === 'done';
+  const n = Number(isDone ? args[1] : args[0]);
 
-if (!RECORDINGS[n]) {
-  console.error('usage: npm run ws:demo -- <1..6>   |   npm run ws:demo:done -- <1..6>');
-  process.exit(2);
+  if (!RECORDINGS[n]) {
+    console.error('usage: npm run ws:demo -- <1..6>   |   npm run ws:demo:done -- <1..6>');
+    process.exit(2);
+  }
+
+  try {
+    if (isDone) done(n);
+    else setup(n);
+  } catch (err) {
+    // Anything unexpected (an unwritable settings.local.json, a missing docs/ path)
+    // still leaves the operator with one line, not a stack trace.
+    fail(`Prep failed: ${err.message}`);
+  }
 }
-
-if (isDone) done(n);
-else setup(n);
