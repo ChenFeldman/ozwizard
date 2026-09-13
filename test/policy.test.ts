@@ -63,11 +63,17 @@ describe('policy', () => {
     expect(result.findings.map((f) => f.advisoryId)).toContain('POLICY-DENYLIST');
   });
 
-  it('does not block denylisted transitive dependency', () => {
+  it('blocks denylisted transitive dependency (OZ-105)', () => {
     const resolved = [transitive('left-hand', '2.0.0', 'parent@1.0.0')];
     const result = evaluate([], resolved, DEFAULT_POLICY);
-    expect(result.verdict).toBe('allow');
-    expect(result.findings).toEqual([]);
+    expect(result.verdict).toBe('block');
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({
+      advisoryId: 'POLICY-DENYLIST',
+      package: 'left-hand',
+      direct: false,
+      path: ['parent@1.0.0', 'left-hand@2.0.0'],
+    });
   });
 
   it('blocks on a fresh critical advisory', () => {
